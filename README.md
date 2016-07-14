@@ -1,3 +1,9 @@
+# THE OBJECTIVE IS TO CREATE AN INDEPENDANT TIDY DATA SET WITH:
+## THE AVERAGE OF EACH VARIABLE
+## FOR EACH ACTIVITY AND
+## FOR EACH SUBJECT
+
+
 ## clean up and setup work space
 
 rm(list=ls())
@@ -17,6 +23,8 @@ fileUrl <- "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%2
 download.file(fileUrl,destfile="./Data1/Dataset.zip", method = "curl")
 
 unzip(zipfile="./Data/Dataset.zip",exdir="./Data1")
+
+# DATASET No. 1 - Parts 1-4 of Question
 
 ## load training datasets as data.frames
 
@@ -121,25 +129,53 @@ rm(features)
 ## extract measurements for mean and standard deviation only for each measurement
 
 ucihar.select <- select(ucihar, matches('observation|subject|activity|mean|std', ignore.case = TRUE))
+ucihar.select <- select(ucihar.select, -contains('freq', ignore.case = TRUE))
+
+## Cleaning up variable names and then reassign the updated namesto the relevant data set
+
+col.names  = colnames(ucihar.select); 
+
+for (i in 1:length(col.names)) 
+{
+  col.names[i] = gsub("\\()","",col.names[i])
+  col.names[i] = gsub("-std"," S.Dev ",col.names[i])
+  col.names[i] = gsub("_t"," time ",col.names[i])
+  col.names[i] = gsub("_f"," freq ",col.names[i])
+  col.names[i] = gsub("-mean"," Mean ",col.names[i])
+  col.names[i] = gsub("([Gg]ravity)","Gravity",col.names[i])
+  col.names[i] = gsub("[Gg]yro","Gyro",col.names[i])
+  col.names[i] = gsub("([Bb]odyaccjerkmag)","BodyAccJerkMag",col.names[i])
+  };
+  
+colnames(ucihar.select) = col.names;
+
+dataset1 = ucihar.select
+
+# DATASET No. 2 - Part 5 of Question
 
 ## calculate average of each variable for each activity and each subject.
 
-ucihar.mean <- mutate(ucihar, mean = rowMeans(ucihar[,4:564]))
+ucihar.mean <- mutate(ucihar.select, mean = rowMeans(ucihar[,4:564]))
 ucihar.mean <- select(ucihar.mean, observation, subject, activity, mean)
 
-ucihar.select.mean <- mutate(ucihar.select, mean = rowMeans(ucihar.select[,4:86]))
-ucihar.select.mean <- select(ucihar.select.mean, observation, subject, activity, mean)
+## for loop is used to extract each the mean for each activity for each subject
 
-## print new data tables
+count <- c(1:30)
+ 
+for (i in count) {
+ 	
+ 	a <- ucihar.mean %>% filter(subject == i) %>% group_by(activity) %>% mutate(mean = mean(mean)) %>% select(subject, activity, mean) %>% distinct(subject) %>% arrange(subject)
+ 	
+ 	assign(paste("a", i, sep = ""), a)
 
-print(ucihar) ## merged training and test datasets
-print(ucihar.mean) ## the average mean and standard deviation extracted for each measurement
-print(ucihar.select.mean) ## average of each variable for each activity and each subject.
+}
 
-write.table(ucihar.select.mean, "/Users/Everspring/Dropbox/RWork/UCI_HAR_Dataset/tidy.dataset.txt", sep="\t", row.name=FALSE)
+## create tidy.dataset
 
+tidy.dataset <- bind_rows(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30)
 
+## write tidy.dataset
 
+write.table(tidy.dataset, "./Data1/tidy.dataset.txt", sep="\t", row.name=FALSE)
 
-
-
+rm(count)

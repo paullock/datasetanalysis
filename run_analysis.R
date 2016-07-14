@@ -21,18 +21,20 @@ setwd("/Users/Everspring/Dropbox/RWork/UCI_HAR_Assignment/")
 
 ## download, allocate and unzip data
 
-if(!file.exists("./Data")){dir.create("./Data")}
+if(!file.exists("./Data1")){dir.create("./Data1")}
 fileUrl <- "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
 
-download.file(fileUrl,destfile="./Data/Dataset.zip", method = "curl")
+download.file(fileUrl,destfile="./Data1/Dataset.zip", method = "curl")
 
-unzip(zipfile="./Data/Dataset.zip",exdir="./Data")
+unzip(zipfile="./Data1/Dataset.zip",exdir="./Data1")
+
+###### DATASET No. 1 - Parts 1-4 of Question ######
 
 ## load training datasets as data.frames
 
-strain <- read.table("./Data/UCI HAR Dataset/train/subject_train.txt", header = FALSE)
-xtrain <- read.table("./Data/UCI HAR Dataset/train/X_train.txt", header = FALSE)
-ytrain <- read.table("./Data/UCI HAR Dataset/train/Y_train.txt", header = FALSE)
+strain <- read.table("./Data1/UCI HAR Dataset/train/subject_train.txt", header = FALSE)
+xtrain <- read.table("./Data1/UCI HAR Dataset/train/X_train.txt", header = FALSE)
+ytrain <- read.table("./Data1/UCI HAR Dataset/train/Y_train.txt", header = FALSE)
 
 ## add common id to each training dataset
 
@@ -57,9 +59,9 @@ rm(mergesy)
 
 ## load test datasets as data.frames
 
-stest <- read.table("./Data/UCI HAR Dataset/test/subject_test.txt", header = FALSE)
-xtest <- read.table("./Data/UCI HAR Dataset/test/X_test.txt", header = FALSE)
-ytest <- read.table("./Data/UCI HAR Dataset/test/Y_test.txt", header = FALSE)
+stest <- read.table("./Data1/UCI HAR Dataset/test/subject_test.txt", header = FALSE)
+xtest <- read.table("./Data1/UCI HAR Dataset/test/X_test.txt", header = FALSE)
+ytest <- read.table("./Data1/UCI HAR Dataset/test/Y_test.txt", header = FALSE)
 
 ## add common id to each test dataset
 
@@ -109,7 +111,7 @@ ucihar <- mutate(ucihar, activity = ifelse(activity == 1, "walking", ifelse(acti
 
 ## load features as data.frame rto invoke column labeling
 
-features <- read.table("./Data/UCI HAR Dataset/features.txt", header = FALSE)
+features <- read.table("./Data1/UCI HAR Dataset/features.txt", header = FALSE)
 features <- mutate(features, observation = paste("V", V1, sep = ''))
 features <- mutate(features, variables = V2)
 features <- select(features, observation, variables)
@@ -131,25 +133,48 @@ rm(features)
 ## extract measurements for mean and standard deviation only for each measurement
 
 ucihar.select <- select(ucihar, matches('observation|subject|activity|mean|std', ignore.case = TRUE))
+ucihar.select <- select(ucihar.select, -contains('freq', ignore.case = TRUE))
+
+## Cleaning up variable names and then reassign the updated namesto the relevant data set
+
+col.names  = colnames(ucihar.select); 
+
+for (i in 1:length(col.names)) 
+{
+  col.names[i] = gsub("\\()","",col.names[i])
+  col.names[i] = gsub("-std"," S.Dev ",col.names[i])
+  col.names[i] = gsub("_t"," time ",col.names[i])
+  col.names[i] = gsub("_f"," freq ",col.names[i])
+  col.names[i] = gsub("-mean"," Mean ",col.names[i])
+  col.names[i] = gsub("([Gg]ravity)","Gravity",col.names[i])
+  col.names[i] = gsub("[Gg]yro","Gyro",col.names[i])
+  col.names[i] = gsub("([Bb]odyaccjerkmag)","BodyAccJerkMag",col.names[i])
+  };
+  
+colnames(ucihar.select) = col.names;
+
+dataset1 = ucihar.select
+
+###### DATASET No. 2 - Part 5 of Question ######
 
 ## calculate average of each variable for each activity and each subject.
 
-ucihar.mean <- mutate(ucihar, mean = rowMeans(ucihar[,4:564]))
+ucihar.mean <- mutate(ucihar.select, mean = rowMeans(ucihar[,4:564]))
 ucihar.mean <- select(ucihar.mean, observation, subject, activity, mean)
 
-ucihar.select.mean <- mutate(ucihar.select, mean = rowMeans(ucihar.select[,4:86]))
-ucihar.select.mean <- select(ucihar.select.mean, observation, subject, activity, mean)
+count <- c(1:30)
+ 
+for (i in count) {
+ 	
+ 	a <- ucihar.mean %>% filter(subject == i) %>% group_by(activity) %>% mutate(mean = mean(mean)) %>% select(subject, activity, mean) %>% distinct(subject) %>% arrange(subject)
+ 	
+ 	assign(paste("a", i, sep = ""), a)
 
-## print new data tables
+}
 
-print(ucihar) ## merged training and test datasets
-print(ucihar.mean) ## the average mean and standard deviation extracted for each measurement
-print(ucihar.select.mean) ## average of each variable for each activity and each subject.
+tidy.dataset <- bind_rows(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30)
 
-write.table(ucihar.select.mean, "./Data/tidy.dataset.txt", sep="\t", row.name=FALSE)
+write.table(tidy.dataset, "./Data1/tidy.dataset.txt", sep="\t", row.name=FALSE)
 
-
-
-
-
+rm(count)
 
